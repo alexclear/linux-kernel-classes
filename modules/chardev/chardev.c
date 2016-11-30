@@ -11,24 +11,29 @@ MODULE_VERSION("1.0");
 #define MAJOR_NUM 223
 static int number_of_opens;
 
-ssize_t chardev_read (struct file *chardev_file, char __user *user, size_t size, loff_t *offset) {
-	printk(KERN_INFO "In chardev_read\n");
-	return 0;
+ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, loff_t *offset) {
+	int read_size, i;
+	printk(KERN_INFO "In chardev_read, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
+	read_size = size/4;
+	for(i=0; i<read_size; i++) {
+		buf[i] = 'a';
+	}
+	return read_size;
 }
 
-ssize_t chardev_write (struct file *chardev_file, const char __user *user, size_t size, loff_t *offset) {
-	printk(KERN_INFO "In chardev_write\n");
+ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t size, loff_t *offset) {
+	printk(KERN_INFO "In chardev_write, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
 	return 0;
 }
 
 int chardev_open (struct inode *chardev_inode, struct file *chardev_file) {
 	number_of_opens++;
-	printk(KERN_INFO "In chardev_open, %d\n", number_of_opens);
+	printk(KERN_INFO "In chardev_open, %d, file: %s\n", number_of_opens, chardev_file->f_path.dentry->d_name.name);
 	return 0;
 }
 
 int chardev_release (struct inode *chardev_inode, struct file *chardev_file) {
-	printk(KERN_INFO "In chardev_release\n");
+	printk(KERN_INFO "In chardev_release, file: %s\n", chardev_file->f_path.dentry->d_name.name);
 	return 0;
 }
 
@@ -53,6 +58,7 @@ static int __init chardev_init(void) {
 }
 
 static void __exit chardev_exit(void) {
+	unregister_chrdev(MAJOR_NUM, "chardev");
 	printk(KERN_INFO "Deinitializing a chardev driver\n");
 }
 
