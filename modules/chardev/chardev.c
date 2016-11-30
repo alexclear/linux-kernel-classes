@@ -8,7 +8,7 @@ MODULE_AUTHOR("Alex Chistyakov");
 MODULE_DESCRIPTION("A simple character device driver module");
 MODULE_VERSION("1.0");
 
-#define MAJOR_NUM 250
+#define MAJOR_NUM 223
 
 ssize_t chardev_read (struct file *chardev_file, char __user *user, size_t size, loff_t *offset) {
 	printk(KERN_INFO "In chardev_read\n");
@@ -44,6 +44,7 @@ static int __init chardev_init(void) {
 	printk(KERN_INFO "Initializing the chardev driver\n");
 	
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
+	printk(KERN_INFO "Result: %d\n", result);
 	return 0;
 }
 
