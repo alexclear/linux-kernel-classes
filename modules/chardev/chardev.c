@@ -2,6 +2,8 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/slab.h>
+#include <asm/uaccess.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alex Chistyakov");
@@ -10,14 +12,20 @@ MODULE_VERSION("1.0");
 
 #define MAJOR_NUM 223
 static int number_of_opens;
+static int chunk_size;
 
 ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, loff_t *offset) {
-	int read_size, i;
+	int read_size, i, j;
 	printk(KERN_INFO "In chardev_read, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
-	read_size = size/4;
-	for(i=0; i<read_size; i++) {
-		buf[i] = 'a';
+	char* chunk = kmalloc(chunk_size, GFP_KERNEL);
+	for(i=0; i<(size/chunk_size); i++) {
+		for(j=0; j<chunk_size; j++) {
+			chunk[j] = 'a';
+		}
+		copy_to_user(buf + (i*chunk_size), chunk, chunk_size);
+		read_size += (i * chunk_size);
 	}
+	kfree(chunk);
 	return read_size;
 }
 
@@ -50,6 +58,7 @@ static int __init chardev_init(void) {
 
 	printk(KERN_INFO "Initializing the chardev driver\n");
 	number_of_opens = 0;
+	chunk_size = 4;
 	
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
 	
