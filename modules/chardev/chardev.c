@@ -9,6 +9,7 @@ MODULE_DESCRIPTION("A simple character device driver module");
 MODULE_VERSION("1.0");
 
 #define MAJOR_NUM 223
+static int number_of_opens;
 
 ssize_t chardev_read (struct file *chardev_file, char __user *user, size_t size, loff_t *offset) {
 	printk(KERN_INFO "In chardev_read\n");
@@ -21,7 +22,8 @@ ssize_t chardev_write (struct file *chardev_file, const char __user *user, size_
 }
 
 int chardev_open (struct inode *chardev_inode, struct file *chardev_file) {
-	printk(KERN_INFO "In chardev_open\n");
+	number_of_opens++;
+	printk(KERN_INFO "In chardev_open, %d\n", number_of_opens);
 	return 0;
 }
 
@@ -42,8 +44,10 @@ static int __init chardev_init(void) {
 	int result;
 
 	printk(KERN_INFO "Initializing the chardev driver\n");
+	number_of_opens = 0;
 	
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
+	
 	printk(KERN_INFO "Result: %d\n", result);
 	return 0;
 }
