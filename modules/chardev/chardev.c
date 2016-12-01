@@ -16,14 +16,20 @@ static int chunk_size;
 
 ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, loff_t *offset) {
 	int read_size, i, j;
+	read_size=0;
 	printk(KERN_INFO "In chardev_read, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
 	char* chunk = kmalloc(chunk_size, GFP_KERNEL);
 	for(i=0; i<(size/chunk_size); i++) {
+		//printk("i: %d\n", i);
 		for(j=0; j<chunk_size; j++) {
+			printk("j: %d\n", j);
 			chunk[j] = 'a';
 		}
+		//printk("Copying to: %d\n", (i*chunk_size));
 		copy_to_user(buf + (i*chunk_size), chunk, chunk_size);
-		read_size += (i * chunk_size);
+		//printk("read_size before: %d\n", read_size);
+		read_size += chunk_size;
+		//printk("read_size after: %d\n", read_size);
 	}
 	kfree(chunk);
 	return read_size;
