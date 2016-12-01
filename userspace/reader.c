@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define BUF_SIZE 4096
+#define BUF_SIZE 409600
 
 int main (int argc, char** argv) {
 	int fd1 = open("/dev/chardev1", O_RDONLY);
@@ -18,7 +18,7 @@ int main (int argc, char** argv) {
 	if(read_bytes > 0) {
 		buf[read_bytes - 1] = NULL;
 	}
-	fprintf(stdout, "Number of bytes read: %d, %s\n", read_bytes, buf);
+	fprintf(stdout, "Number of bytes read: %d\n", read_bytes);
 
 	int fd2 = open("/dev/chardev2", O_RDONLY);
 	if(fd2 == -1) {
