@@ -16,7 +16,7 @@ int main (int argc, char** argv) {
 	fprintf(stdout, "Fd1: %d\n", fd1);
 	char buf[BUF_SIZE];
 	for(i=0; i< BUF_SIZE; i++) {
-		buf[i] = 'a';
+		buf[i] = 'b';
 	}
 	for(j=0; j<1000000; j++) {
 		ssize_t written_bytes = write(fd1, buf, BUF_SIZE);

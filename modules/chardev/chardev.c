@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <asm/uaccess.h>
+#include <linux/semaphore.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Alex Chistyakov");
@@ -18,6 +19,7 @@ static int number_of_opens;
 static int chunk_size;
 static char* write_buffer;
 static spinlock_t writer_spinlock;
+static struct semaphore writer_sem;
 
 static int get_number_of_opens (void) {
 	return number_of_opens;
@@ -48,7 +50,8 @@ ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, 
 ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t size, loff_t *offset) {
 	int i, j;
 	char symbol;
-	spin_lock(&writer_spinlock);
+	//spin_lock(&writer_spinlock);
+	down(&writer_sem);
 	//printk(KERN_INFO "In chardev_write, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
 	if(size > WRITEBUF_SIZE) {
 		return -1;
@@ -66,7 +69,8 @@ ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t
 			break;
 		}
 	}
-	spin_unlock(&writer_spinlock);
+	//spin_unlock(&writer_spinlock);
+	up(&writer_sem);
 	return size;
 }
 
@@ -101,6 +105,7 @@ static int __init chardev_init(void) {
 	printk(KERN_INFO "Buffer allocated: %d\n", write_buffer);
 	
 	spin_lock_init(&writer_spinlock);
+	sema_init(&writer_sem, 1);
 
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
 	
