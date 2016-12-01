@@ -3,6 +3,7 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
+#include <linux/spinlock.h>
 #include <asm/uaccess.h>
 
 MODULE_LICENSE("GPL");
@@ -16,6 +17,7 @@ MODULE_VERSION("1.0");
 static int number_of_opens;
 static int chunk_size;
 static char* write_buffer;
+static spinlock_t writer_spinlock;
 
 static int get_number_of_opens (void) {
 	return number_of_opens;
@@ -46,6 +48,7 @@ ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, 
 ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t size, loff_t *offset) {
 	int i, j;
 	char symbol;
+	spin_lock(&writer_spinlock);
 	//printk(KERN_INFO "In chardev_write, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
 	if(size > WRITEBUF_SIZE) {
 		return -1;
@@ -63,6 +66,7 @@ ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t
 			break;
 		}
 	}
+	spin_unlock(&writer_spinlock);
 	return size;
 }
 
@@ -96,6 +100,8 @@ static int __init chardev_init(void) {
 	write_buffer = kmalloc(WRITEBUF_SIZE, GFP_KERNEL);
 	printk(KERN_INFO "Buffer allocated: %d\n", write_buffer);
 	
+	spin_lock_init(&writer_spinlock);
+
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
 	
 	printk(KERN_INFO "Result: %d\n", result);
