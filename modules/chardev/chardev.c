@@ -12,8 +12,10 @@ MODULE_VERSION("1.0");
 
 #define MAJOR_NUM 223
 #define CHUNK_SIZE 4
+#define WRITEBUF_SIZE 4096000
 static int number_of_opens;
 static int chunk_size;
+static char* write_buffer;
 
 static int get_number_of_opens (void) {
 	return number_of_opens;
@@ -42,8 +44,26 @@ ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, 
 }
 
 ssize_t chardev_write (struct file *chardev_file, const char __user *buf, size_t size, loff_t *offset) {
-	printk(KERN_INFO "In chardev_write, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
-	return 0;
+	int i, j;
+	char symbol;
+	//printk(KERN_INFO "In chardev_write, file: %s, size: %d\n", chardev_file->f_path.dentry->d_name.name, size);
+	if(size > WRITEBUF_SIZE) {
+		return -1;
+	}
+	if((size % chunk_size) != 0) {
+		return -1;
+	}
+	for(i=0; i<(size/chunk_size); i++) {
+		copy_from_user(write_buffer + (i*chunk_size), buf + (i*chunk_size), chunk_size);
+	}
+	symbol = write_buffer[0];
+	for(i=1; i<size; i++) {
+		if(symbol != write_buffer[i]) {
+			printk("Race conditions are possible!\n");
+			break;
+		}
+	}
+	return size;
 }
 
 int chardev_open (struct inode *chardev_inode, struct file *chardev_file) {
@@ -71,6 +91,10 @@ static int __init chardev_init(void) {
 	printk(KERN_INFO "Initializing the chardev driver\n");
 	number_of_opens = 0;
 	chunk_size = CHUNK_SIZE;
+
+	printk(KERN_INFO "Allocating a write buffer\n");
+	write_buffer = kmalloc(WRITEBUF_SIZE, GFP_KERNEL);
+	printk(KERN_INFO "Buffer allocated: %d\n", write_buffer);
 	
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
 	
@@ -80,6 +104,7 @@ static int __init chardev_init(void) {
 
 static void __exit chardev_exit(void) {
 	unregister_chrdev(MAJOR_NUM, "chardev");
+	kfree(write_buffer);
 	printk(KERN_INFO "Deinitializing a chardev driver\n");
 }
 
