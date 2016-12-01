@@ -11,8 +11,14 @@ MODULE_DESCRIPTION("A simple character device driver module");
 MODULE_VERSION("1.0");
 
 #define MAJOR_NUM 223
+#define CHUNK_SIZE 4
 static int number_of_opens;
 static int chunk_size;
+
+static int get_number_of_opens (void) {
+	return number_of_opens;
+}
+EXPORT_SYMBOL(get_number_of_opens);
 
 ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, loff_t *offset) {
 	int read_size, i, j;
@@ -22,7 +28,7 @@ ssize_t chardev_read (struct file *chardev_file, char __user *buf, size_t size, 
 	for(i=0; i<(size/chunk_size); i++) {
 		//printk("i: %d\n", i);
 		for(j=0; j<chunk_size; j++) {
-			printk("j: %d\n", j);
+			//printk("j: %d\n", j);
 			chunk[j] = 'a';
 		}
 		//printk("Copying to: %d\n", (i*chunk_size));
@@ -64,7 +70,7 @@ static int __init chardev_init(void) {
 
 	printk(KERN_INFO "Initializing the chardev driver\n");
 	number_of_opens = 0;
-	chunk_size = 4;
+	chunk_size = CHUNK_SIZE;
 	
 	result = register_chrdev(MAJOR_NUM, "chardev", &file_ops);
 	
