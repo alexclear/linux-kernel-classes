@@ -1,4 +1,5 @@
 /userspace/reader
+/userspace/writer
 .tmp_versions/
 *.o
 *.ko
